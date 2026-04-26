@@ -1,0 +1,1590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Explain This</title>
+  <meta name="description" content="Explain CS and math concepts beautifully with premium AI-powered breakdowns.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #080810;
+      --bg-2: #0b1020;
+      --surface: rgba(15, 15, 26, 0.74);
+      --surface-strong: rgba(17, 18, 32, 0.9);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-strong: rgba(124, 58, 237, 0.34);
+      --text: #f5f7ff;
+      --muted: #a6accd;
+      --soft: #7d84aa;
+      --accent: #7c3aed;
+      --accent-2: #06b6d4;
+      --accent-3: #a78bfa;
+      --success: #10b981;
+      --warning: #facc15;
+      --danger: #ef4444;
+      --shadow: 0 18px 60px rgba(4, 8, 20, 0.55);
+      --glow: 0 0 0 1px rgba(124, 58, 237, 0.18), 0 18px 48px rgba(124, 58, 237, 0.2);
+      --radius-xl: 28px;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+      --radius-sm: 999px;
+      --ease: 300ms cubic-bezier(.2, .7, .2, 1);
+      --sidebar-width: 272px;
+      --sidebar-collapsed-width: 0px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Inter", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 20% 20%, rgba(124, 58, 237, 0.18), transparent 28%),
+        radial-gradient(circle at 80% 18%, rgba(6, 182, 212, 0.12), transparent 24%),
+        radial-gradient(circle at 50% 80%, rgba(37, 99, 235, 0.1), transparent 30%),
+        linear-gradient(135deg, var(--bg), var(--bg-2));
+      overflow-x: hidden;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      inset: -20%;
+      z-index: -3;
+      filter: blur(80px);
+      opacity: 0.4;
+      animation: drift 18s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+
+    body::before {
+      background:
+        radial-gradient(circle at 25% 30%, rgba(124, 58, 237, 0.35), transparent 22%),
+        radial-gradient(circle at 68% 38%, rgba(6, 182, 212, 0.22), transparent 18%);
+    }
+
+    body::after {
+      background:
+        radial-gradient(circle at 72% 60%, rgba(14, 165, 233, 0.22), transparent 18%),
+        radial-gradient(circle at 34% 68%, rgba(168, 85, 247, 0.18), transparent 18%);
+      animation-duration: 24s;
+    }
+
+    @keyframes drift {
+      from { transform: translate3d(-2%, -1%, 0) scale(1); }
+      to { transform: translate3d(3%, 2%, 0) scale(1.08); }
+    }
+
+    #particle-canvas,
+    .mesh {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    #particle-canvas {
+      z-index: -2;
+      opacity: 0.6;
+    }
+
+    .mesh {
+      z-index: -1;
+      background:
+        radial-gradient(circle at 15% 20%, rgba(124, 58, 237, 0.15), transparent 0 28%),
+        radial-gradient(circle at 85% 20%, rgba(6, 182, 212, 0.12), transparent 0 24%),
+        radial-gradient(circle at 50% 85%, rgba(79, 70, 229, 0.12), transparent 0 26%);
+      filter: blur(30px);
+      animation: meshShift 16s ease-in-out infinite alternate;
+      opacity: 0.7;
+    }
+
+    @keyframes meshShift {
+      from { transform: translate3d(0, 0, 0) scale(1); }
+      to { transform: translate3d(2%, -2%, 0) scale(1.04); }
+    }
+
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, rgba(124, 58, 237, 0.9), rgba(6, 182, 212, 0.85));
+      border-radius: 999px;
+      border: 2px solid transparent;
+      background-clip: padding-box;
+    }
+
+    .app-shell {
+      display: grid;
+      grid-template-columns: 1fr;
+      min-height: 100vh;
+    }
+
+    .history-sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: min(var(--sidebar-width), 88vw);
+      padding: 24px 18px;
+      border-right: 1px solid var(--border);
+      background: rgba(8, 8, 16, 0.65);
+      backdrop-filter: blur(20px);
+      transform: translateX(-100%);
+      transition: transform var(--ease), border-color var(--ease);
+      z-index: 30;
+    }
+
+    .history-sidebar.open {
+      transform: translateX(0);
+    }
+
+    .history-sidebar.collapsed-desktop {
+      transform: translateX(calc(-100% - 18px));
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .sidebar-header,
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .sidebar-title {
+      font-size: 0.95rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .icon-btn {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text);
+      border-radius: 14px;
+      width: 42px;
+      height: 42px;
+      display: inline-grid;
+      place-items: center;
+      cursor: pointer;
+      transition: transform var(--ease), border-color var(--ease), background var(--ease), box-shadow var(--ease);
+    }
+
+    .icon-btn:hover {
+      transform: translateY(-2px) scale(1.02);
+      border-color: rgba(124, 58, 237, 0.45);
+      box-shadow: var(--glow);
+    }
+
+    .desktop-toggle {
+      display: none;
+    }
+
+    .history-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .history-item {
+      appearance: none;
+      width: 100%;
+      text-align: left;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 14px 14px 13px;
+      background: rgba(255, 255, 255, 0.03);
+      cursor: pointer;
+      transition: transform var(--ease), background var(--ease), border-color var(--ease), box-shadow var(--ease);
+    }
+
+    .history-item:hover {
+      transform: translateY(-2px);
+      background: rgba(124, 58, 237, 0.08);
+      border-color: rgba(124, 58, 237, 0.32);
+      box-shadow: var(--glow);
+    }
+
+    .history-item strong,
+    .history-item span {
+      display: block;
+    }
+
+    .history-item strong {
+      font-size: 0.98rem;
+      margin-bottom: 6px;
+    }
+
+    .history-item span {
+      color: var(--soft);
+      font-size: 0.82rem;
+    }
+
+    .empty-history {
+      margin-top: 18px;
+      padding: 18px;
+      border: 1px dashed rgba(255, 255, 255, 0.12);
+      border-radius: 18px;
+      color: var(--soft);
+      line-height: 1.6;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .sidebar-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.38);
+      backdrop-filter: blur(6px);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity var(--ease), visibility var(--ease);
+      z-index: 20;
+    }
+
+    .sidebar-backdrop.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .main {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 18px 0 48px;
+    }
+
+    .hero,
+    .composer-wrap,
+    .result-shell {
+      max-width: 860px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .topbar {
+      padding: 8px 0 14px;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .wordmark {
+      font-weight: 800;
+      font-size: clamp(1.3rem, 3.5vw, 1.65rem);
+      letter-spacing: -0.04em;
+      background: linear-gradient(135deg, #c4b5fd 0%, #7c3aed 40%, #06b6d4 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      filter: drop-shadow(0 10px 24px rgba(124, 58, 237, 0.25));
+    }
+
+    .topbar-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .topbar-badge::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 0 18px rgba(124, 58, 237, 0.8);
+    }
+
+    .hero {
+      min-height: auto;
+      display: grid;
+      align-items: start;
+      padding: 2px 0 8px;
+    }
+
+    .hero-card,
+    .result-card,
+    .quiz-card,
+    .input-panel {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      backdrop-filter: blur(20px);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-card,
+    .input-panel {
+      border-radius: var(--radius-xl);
+    }
+
+    .hero-card::before,
+    .result-card::before,
+    .quiz-card::before,
+    .input-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.06), transparent 25%, transparent 60%, rgba(6,182,212,0.04));
+      pointer-events: none;
+    }
+
+    .hero-card {
+      padding: clamp(16px, 2.8vw, 24px);
+      display: grid;
+      gap: 12px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(124, 58, 237, 0.1);
+      border: 1px solid rgba(124, 58, 237, 0.18);
+      color: #d7ceff;
+      font-size: 0.78rem;
+      width: fit-content;
+    }
+
+    .hero-content {
+      max-width: 620px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(1.7rem, 4.6vw, 3.15rem);
+      line-height: 1;
+      letter-spacing: -0.06em;
+    }
+
+    .hero-gradient {
+      display: block;
+      background: linear-gradient(135deg, #ffffff 8%, #ccb9ff 32%, #7c3aed 60%, #06b6d4 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero-copy {
+      margin: 0;
+      color: var(--muted);
+      font-size: clamp(0.88rem, 1.45vw, 0.98rem);
+      line-height: 1.55;
+      max-width: 50ch;
+    }
+
+    .hero-prompt {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #d9ddf7;
+      font-size: 0.84rem;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+      width: fit-content;
+    }
+
+    .hero-prompt::before {
+      content: "";
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 0 24px rgba(6, 182, 212, 0.55);
+    }
+
+    .composer-wrap {
+      margin-top: -4px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .input-panel {
+      padding: 14px;
+    }
+
+    .panel-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .panel-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-start;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .section-label {
+      display: block;
+      color: var(--muted);
+      font-size: 0.82rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .topic-field {
+      position: relative;
+    }
+
+    .topic-input {
+      width: 100%;
+      min-height: 56px;
+      resize: vertical;
+      border: 1px solid rgba(255,255,255,0.08);
+      outline: none;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.035);
+      color: var(--text);
+      padding: 14px 16px;
+      font: inherit;
+      font-size: 0.94rem;
+      line-height: 1.45;
+      transition: border-color var(--ease), box-shadow var(--ease), transform var(--ease), background var(--ease);
+    }
+
+    .topic-input:focus {
+      border-color: rgba(124, 58, 237, 0.55);
+      background: rgba(124, 58, 237, 0.06);
+      box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.12);
+    }
+
+    .topic-input::placeholder {
+      color: rgba(166, 172, 205, 0.85);
+    }
+
+    .hint-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      color: var(--soft);
+      font-size: 0.8rem;
+    }
+
+    .difficulty-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .difficulty-btn {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.035);
+      color: #dce0fa;
+      border-radius: 999px;
+      padding: 10px 14px;
+      font: inherit;
+      font-size: 0.88rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: transform var(--ease), background var(--ease), border-color var(--ease), box-shadow var(--ease);
+      white-space: nowrap;
+    }
+
+    .difficulty-btn:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255,255,255,0.16);
+    }
+
+    .difficulty-btn.active {
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.18), rgba(6, 182, 212, 0.12));
+      border-color: rgba(124, 58, 237, 0.45);
+      box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.1), 0 0 30px rgba(124, 58, 237, 0.25);
+      transform: translateY(-1px);
+    }
+
+    .difficulty-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      box-shadow: 0 0 18px currentColor;
+    }
+
+    .difficulty-dot.simple { color: var(--success); background: currentColor; }
+    .difficulty-dot.student { color: var(--warning); background: currentColor; }
+    .difficulty-dot.technical { color: var(--danger); background: currentColor; }
+
+    .action-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .primary-btn,
+    .secondary-btn,
+    .retry-btn {
+      position: relative;
+      overflow: hidden;
+      appearance: none;
+      border: none;
+      border-radius: 18px;
+      font: inherit;
+      cursor: pointer;
+      transition: transform var(--ease), box-shadow var(--ease), filter var(--ease), opacity var(--ease);
+    }
+
+    .primary-btn {
+      background: linear-gradient(135deg, var(--accent), #5b21b6 55%, var(--accent-2));
+      color: white;
+      padding: 14px 20px;
+      min-height: 50px;
+      font-weight: 700;
+      font-size: 0.94rem;
+      box-shadow: 0 16px 36px rgba(124, 58, 237, 0.32);
+    }
+
+    .primary-btn:hover {
+      transform: translateY(-2px) scale(1.01);
+      box-shadow: 0 20px 42px rgba(124, 58, 237, 0.45);
+      filter: brightness(1.04);
+    }
+
+    .secondary-btn,
+    .retry-btn {
+      padding: 12px 16px;
+      min-height: 48px;
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .secondary-btn:hover,
+    .retry-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--glow);
+    }
+
+    .secondary-btn[hidden],
+    .result-shell[hidden],
+    .quiz-card[hidden],
+    .skeleton-card[hidden],
+    .error-card[hidden] {
+      display: none !important;
+    }
+
+    .ripple {
+      position: absolute;
+      border-radius: 999px;
+      transform: scale(0);
+      background: rgba(255,255,255,0.45);
+      animation: ripple 700ms ease-out;
+      pointer-events: none;
+    }
+
+    @keyframes ripple {
+      to {
+        transform: scale(4.5);
+        opacity: 0;
+      }
+    }
+
+    .result-shell {
+      margin-top: 20px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .skeleton-card,
+    .result-card,
+    .quiz-card,
+    .error-card {
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      backdrop-filter: blur(20px);
+      box-shadow: var(--shadow);
+      padding: 22px;
+    }
+
+    .skeleton-row {
+      height: 14px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.05), rgba(255,255,255,0.12), rgba(255,255,255,0.05));
+      background-size: 200% 100%;
+      animation: pulse 1.4s ease-in-out infinite;
+      margin-bottom: 12px;
+    }
+
+    .skeleton-row:last-child {
+      margin-bottom: 0;
+    }
+
+    @keyframes pulse {
+      0% { background-position: 200% 0; opacity: 0.7; }
+      50% { opacity: 1; }
+      100% { background-position: -200% 0; opacity: 0.7; }
+    }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .card-title {
+      font-size: 1rem;
+      color: #e8ebff;
+      letter-spacing: 0.02em;
+    }
+
+    .card-meta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--soft);
+      font-size: 0.88rem;
+    }
+
+    .result-card {
+      opacity: 0;
+      transform: translateY(10px);
+      animation: cardIn 500ms ease forwards;
+    }
+
+    @keyframes cardIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .explanation-content,
+    .quiz-list {
+      color: #ebeeff;
+      line-height: 1.8;
+      font-size: 1rem;
+    }
+
+    .explanation-content p,
+    .explanation-content ul,
+    .explanation-content ol,
+    .quiz-list li {
+      margin: 0 0 14px;
+    }
+
+    .explanation-content p:last-child,
+    .quiz-list li:last-child {
+      margin-bottom: 0;
+    }
+
+    .explanation-content ul,
+    .explanation-content ol {
+      padding-left: 1.4rem;
+    }
+
+    .explanation-content code {
+      font-family: "Fira Code", monospace;
+      font-size: 0.92em;
+      background: rgba(255,255,255,0.06);
+      color: #d5dcff;
+      padding: 0.18em 0.4em;
+      border-radius: 8px;
+    }
+
+    .explanation-content pre {
+      margin: 18px 0;
+      overflow-x: auto;
+      border-radius: 18px;
+      background: #0a0f1d;
+      border: 1px solid rgba(255,255,255,0.06);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+    }
+
+    .explanation-content pre code {
+      display: block;
+      padding: 18px;
+      background: transparent;
+      font-size: 0.9rem;
+      color: #dbe3ff;
+    }
+
+    .token-comment { color: #6b7280; }
+    .token-keyword { color: #c084fc; }
+    .token-string { color: #67e8f9; }
+    .token-number { color: #f9a8d4; }
+    .token-function { color: #93c5fd; }
+    .token-operator { color: #f8fafc; opacity: 0.9; }
+
+    .cursor {
+      display: inline-block;
+      width: 0.65ch;
+      color: var(--accent-3);
+      animation: blink 900ms step-end infinite;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    .error-card {
+      color: #ffd7de;
+      border-color: rgba(239, 68, 68, 0.2);
+      background: rgba(64, 13, 26, 0.45);
+    }
+
+    .error-copy {
+      color: #ffc8d0;
+      line-height: 1.7;
+      margin: 0 0 16px;
+    }
+
+    .quiz-card {
+      opacity: 0;
+      transform: translateY(12px);
+      animation: cardIn 450ms ease forwards;
+    }
+
+    .quiz-list {
+      padding-left: 1.2rem;
+    }
+
+    .footer-note {
+      margin-top: 10px;
+      color: var(--soft);
+      font-size: 0.86rem;
+    }
+
+    @media (min-width: 980px) {
+      .app-shell {
+        display: block;
+        padding-left: var(--sidebar-width);
+        transition: padding-left var(--ease);
+      }
+
+      .app-shell.sidebar-collapsed {
+        padding-left: var(--sidebar-collapsed-width);
+      }
+
+      .history-sidebar {
+        transform: none;
+        z-index: 5;
+        opacity: 1;
+        pointer-events: auto;
+        transition: transform var(--ease), border-color var(--ease), opacity var(--ease);
+      }
+
+      .sidebar-backdrop,
+      .mobile-only {
+        display: none !important;
+      }
+
+      .desktop-toggle {
+        display: inline-grid;
+      }
+
+      .main {
+        width: min(100%, 920px);
+        margin: 0 auto;
+        padding-left: 24px;
+        padding-right: 24px;
+      }
+
+      .hero {
+        min-height: auto;
+        padding-top: 12px;
+      }
+
+      .composer-wrap {
+        margin-top: -2px;
+      }
+    }
+
+    @media (max-width: 979px) {
+      .desktop-only {
+        display: none !important;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .main {
+        width: min(100% - 20px, 1120px);
+        padding-top: 10px;
+      }
+
+      .hero-card,
+      .input-panel,
+      .skeleton-card,
+      .result-card,
+      .quiz-card,
+      .error-card {
+        border-radius: 24px;
+      }
+
+      .hero-card {
+        padding: 20px 18px;
+      }
+
+      .input-panel {
+        padding: 16px;
+      }
+
+      .topic-input {
+        min-height: 88px;
+        padding: 18px 16px;
+      }
+
+      .primary-btn,
+      .secondary-btn,
+      .retry-btn {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .action-row {
+        display: grid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="particle-canvas" aria-hidden="true"></canvas>
+  <div class="mesh" aria-hidden="true"></div>
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+  <div class="app-shell">
+    <aside class="history-sidebar" id="historySidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title">Recent topics</div>
+        <button class="icon-btn desktop-toggle" id="desktopSidebarToggle" type="button" aria-label="Collapse recent topics">&larr;</button>
+        <button class="icon-btn mobile-only" id="closeSidebarBtn" type="button" aria-label="Close history">
+          ✕
+        </button>
+      </div>
+      <div id="historyList" class="history-list"></div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div class="topbar-left">
+          <button class="icon-btn mobile-only" id="openSidebarBtn" type="button" aria-label="Open history">☰</button>
+          <button class="icon-btn desktop-toggle" id="desktopSidebarOpen" type="button" aria-label="Open recent topics" hidden>&#9776;</button>
+          <div class="wordmark">Explain This</div>
+        </div>
+        <div class="topbar-badge desktop-only">Premium concept explainer</div>
+      </div>
+
+      <section class="hero">
+        <div class="hero-card">
+          <div class="eyebrow">AI explanations with taste</div>
+          <div class="hero-content">
+            <h1>
+              <span class="hero-gradient">Explain This</span>
+            </h1>
+            <p class="hero-copy">Turn intimidating CS and math topics into something you actually understand. Pick the depth, ask for clarity, then quiz yourself while the idea is still fresh.</p>
+          </div>
+          <div class="hero-prompt">What do you want to understand today?</div>
+        </div>
+      </section>
+
+      <section class="composer-wrap">
+        <div class="input-panel">
+          <div class="panel-grid">
+            <div class="panel-top">
+              <div class="section-label">Enter a topic</div>
+              <div class="topbar-badge" id="providerBadge">Groq · Llama 3.3 70B</div>
+            </div>
+
+            <div class="difficulty-row" id="providerRow">
+              <button class="difficulty-btn active" type="button" data-provider="groq">
+                <span>Groq</span>
+              </button>
+            </div>
+
+            <div class="topic-field">
+              <textarea id="topicInput" class="topic-input" rows="3" aria-label="Topic input" placeholder="Try “recursion”"></textarea>
+            </div>
+
+            <div class="hint-row">
+              <span>Press Enter to explain. Use Shift+Enter for a new line.</span>
+              <span id="difficultyHint">Mode: Simple</span>
+            </div>
+
+            <div class="difficulty-row" id="difficultyRow">
+              <button class="difficulty-btn active" type="button" data-level="simple">
+                <span class="difficulty-dot simple"></span>
+                <span>🟢 Simple</span>
+              </button>
+              <button class="difficulty-btn" type="button" data-level="student">
+                <span class="difficulty-dot student"></span>
+                <span>🟡 Student</span>
+              </button>
+              <button class="difficulty-btn" type="button" data-level="technical">
+                <span class="difficulty-dot technical"></span>
+                <span>🔴 Technical</span>
+              </button>
+            </div>
+
+            <div class="action-row">
+              <button id="explainBtn" class="primary-btn" type="button">Explain it</button>
+              <button id="quizBtn" class="secondary-btn" type="button" hidden>Quiz me</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="resultShell" class="result-shell" hidden>
+          <div id="skeletonCard" class="skeleton-card" hidden aria-live="polite">
+            <div class="card-head">
+              <div class="card-title">Thinking through the idea...</div>
+              <div class="card-meta">Generating explanation</div>
+            </div>
+            <div class="skeleton-row" style="width: 84%;"></div>
+            <div class="skeleton-row" style="width: 97%;"></div>
+            <div class="skeleton-row" style="width: 91%;"></div>
+            <div class="skeleton-row" style="width: 74%;"></div>
+            <div class="skeleton-row" style="width: 65%;"></div>
+          </div>
+
+          <div id="errorCard" class="error-card" hidden>
+            <div class="card-head">
+              <div class="card-title">Something went wrong</div>
+              <div class="card-meta">API request failed</div>
+            </div>
+            <p id="errorMessage" class="error-copy">The explanation could not be generated right now.</p>
+            <button id="retryBtn" class="retry-btn" type="button">Retry</button>
+          </div>
+
+          <article id="resultCard" class="result-card" hidden>
+            <div class="card-head">
+              <div class="card-title" id="resultTitle">Explanation</div>
+              <div class="card-meta" id="resultMeta">Ready</div>
+            </div>
+            <div id="explanationContent" class="explanation-content"></div>
+          </article>
+
+          <section id="quizCard" class="quiz-card" hidden>
+            <div class="card-head">
+              <div class="card-title">Quick quiz</div>
+              <div class="card-meta">3 questions</div>
+            </div>
+            <ol id="quizList" class="quiz-list"></ol>
+            <div class="footer-note">Tip: answer out loud before checking your notes.</div>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const PROVIDERS = {
+      groq: {
+        label: "Groq · Llama 3.3 70B",
+        apiKey: "YOUR_API_KEY_HERE",
+        model: "llama-3.3-70b-versatile"
+      }
+    };
+    const HISTORY_KEY = "explain-this-history-v1";
+    const MAX_HISTORY = 5;
+
+    const systemPrompts = {
+      simple: "You explain computer science and math concepts like the user is a curious 12-year-old. Use vivid analogies, short examples, and zero jargon unless you explain it immediately in plain language. Keep the tone warm and intuitive.",
+      student: "You explain computer science and math concepts clearly for a university CS or math student. Use examples, intuition, and a balanced level of rigor. Define important terms simply and connect theory to practical understanding.",
+      technical: "You explain computer science and math concepts precisely and formally. Include theoretical framing, complexity where relevant, important edge cases, assumptions, and any core definitions or properties needed for technical accuracy."
+    };
+
+    const topicInput = document.getElementById("topicInput");
+    const explainBtn = document.getElementById("explainBtn");
+    const quizBtn = document.getElementById("quizBtn");
+    const retryBtn = document.getElementById("retryBtn");
+    const resultShell = document.getElementById("resultShell");
+    const resultCard = document.getElementById("resultCard");
+    const resultTitle = document.getElementById("resultTitle");
+    const resultMeta = document.getElementById("resultMeta");
+    const explanationContent = document.getElementById("explanationContent");
+    const quizCard = document.getElementById("quizCard");
+    const quizList = document.getElementById("quizList");
+    const historyList = document.getElementById("historyList");
+    const difficultyHint = document.getElementById("difficultyHint");
+    const skeletonCard = document.getElementById("skeletonCard");
+    const errorCard = document.getElementById("errorCard");
+    const errorMessage = document.getElementById("errorMessage");
+    const providerBadge = document.getElementById("providerBadge");
+    const providerButtons = [...document.querySelectorAll("#providerRow .difficulty-btn")];
+    const difficultyButtons = [...document.querySelectorAll("#difficultyRow .difficulty-btn")];
+    const openSidebarBtn = document.getElementById("openSidebarBtn");
+    const closeSidebarBtn = document.getElementById("closeSidebarBtn");
+    const desktopSidebarToggle = document.getElementById("desktopSidebarToggle");
+    const desktopSidebarOpen = document.getElementById("desktopSidebarOpen");
+    const historySidebar = document.getElementById("historySidebar");
+    const sidebarBackdrop = document.getElementById("sidebarBackdrop");
+    const appShell = document.querySelector(".app-shell");
+
+    const examples = [
+      "recursion",
+      "eigenvalues",
+      "Big-O notation",
+      "gradient descent",
+      "hash tables",
+      "Fourier transform",
+      "dynamic programming"
+    ];
+
+    let selectedDifficulty = "simple";
+    let selectedProvider = "groq";
+    let lastTopic = "";
+    let currentExplanation = "";
+    let placeholderIndex = 0;
+    let placeholderFrame = null;
+    let desktopSidebarCollapsed = false;
+
+    function getHistory() {
+      try {
+        return JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveHistory(topic, difficulty) {
+      const cleanTopic = topic.trim();
+      if (!cleanTopic) return;
+      const history = getHistory().filter(item => item.topic.toLowerCase() !== cleanTopic.toLowerCase());
+      history.unshift({
+        topic: cleanTopic,
+        difficulty,
+        time: new Date().toLocaleString([], { dateStyle: "medium", timeStyle: "short" })
+      });
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, MAX_HISTORY)));
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const history = getHistory();
+      historyList.innerHTML = "";
+
+      if (!history.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty-history";
+        empty.textContent = "Your last five concepts will appear here so you can jump back into them instantly.";
+        historyList.appendChild(empty);
+        return;
+      }
+
+      history.forEach(item => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "history-item";
+        button.innerHTML = `<strong>${escapeHtml(item.topic)}</strong><span>${capitalize(item.difficulty)} · ${escapeHtml(item.time)}</span>`;
+        button.addEventListener("click", () => {
+          topicInput.value = item.topic;
+          setDifficulty(item.difficulty);
+          closeSidebar();
+          topicInput.focus();
+        });
+        historyList.appendChild(button);
+      });
+    }
+
+    function setDifficulty(level) {
+      selectedDifficulty = level;
+      difficultyButtons.forEach(btn => btn.classList.toggle("active", btn.dataset.level === level));
+      difficultyHint.textContent = `Mode: ${capitalize(level)}`;
+    }
+
+    function setProvider(provider) {
+      selectedProvider = provider;
+      providerButtons.forEach(btn => btn.classList.toggle("active", btn.dataset.provider === provider));
+      if (providerBadge) {
+        providerBadge.textContent = PROVIDERS[provider].label;
+      }
+    }
+
+    function capitalize(value) {
+      return value.charAt(0).toUpperCase() + value.slice(1);
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#39;"
+      }[char]));
+    }
+
+    function markdownToHtml(markdown) {
+      const lines = markdown.replace(/\r\n/g, "\n").split("\n");
+      let html = "";
+      let inList = false;
+      let inOrderedList = false;
+      let inCodeBlock = false;
+      let codeBuffer = [];
+
+      const closeLists = () => {
+        if (inList) {
+          html += "</ul>";
+          inList = false;
+        }
+        if (inOrderedList) {
+          html += "</ol>";
+          inOrderedList = false;
+        }
+      };
+
+      for (const rawLine of lines) {
+        const line = rawLine.trimEnd();
+
+        if (line.startsWith("```")) {
+          if (!inCodeBlock) {
+            closeLists();
+            inCodeBlock = true;
+            codeBuffer = [];
+          } else {
+            html += `<pre><code>${highlightCode(escapeHtml(codeBuffer.join("\n")))}</code></pre>`;
+            inCodeBlock = false;
+          }
+          continue;
+        }
+
+        if (inCodeBlock) {
+          codeBuffer.push(rawLine);
+          continue;
+        }
+
+        if (!line.trim()) {
+          closeLists();
+          continue;
+        }
+
+        if (/^\d+\.\s+/.test(line)) {
+          if (!inOrderedList) {
+            closeLists();
+            html += "<ol>";
+            inOrderedList = true;
+          }
+          html += `<li>${inlineMarkdown(line.replace(/^\d+\.\s+/, ""))}</li>`;
+          continue;
+        }
+
+        if (/^[-*]\s+/.test(line)) {
+          if (!inList) {
+            closeLists();
+            html += "<ul>";
+            inList = true;
+          }
+          html += `<li>${inlineMarkdown(line.replace(/^[-*]\s+/, ""))}</li>`;
+          continue;
+        }
+
+        closeLists();
+        html += `<p>${inlineMarkdown(line)}</p>`;
+      }
+
+      closeLists();
+      if (inCodeBlock) {
+        html += `<pre><code>${highlightCode(escapeHtml(codeBuffer.join("\n")))}</code></pre>`;
+      }
+
+      return html;
+    }
+
+    function inlineMarkdown(text) {
+      return escapeHtml(text)
+        .replace(/`([^`]+)`/g, "<code>$1</code>")
+        .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+        .replace(/\*([^*]+)\*/g, "<em>$1</em>");
+    }
+
+    function highlightCode(code) {
+      return code
+        .replace(/(\/\/.*$|#.*$)/gm, '<span class="token-comment">$1</span>')
+        .replace(/\b(function|return|if|else|for|while|class|const|let|var|def|import|from|export|new|try|catch|finally|await|async|public|private|static)\b/g, '<span class="token-keyword">$1</span>')
+        .replace(/(["'`])((?:\\.|(?!\1).)*)\1/g, '<span class="token-string">$&</span>')
+        .replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="token-number">$1</span>')
+        .replace(/\b([a-zA-Z_]\w*)(?=\()/g, '<span class="token-function">$1</span>');
+    }
+
+    function setLoading(isLoading) {
+      explainBtn.disabled = isLoading;
+      explainBtn.style.opacity = isLoading ? "0.75" : "1";
+      explainBtn.textContent = isLoading ? "Explaining..." : "Explain it";
+      if (isLoading) {
+        resultShell.hidden = false;
+        skeletonCard.hidden = false;
+        errorCard.hidden = true;
+        resultCard.hidden = true;
+        quizCard.hidden = true;
+        quizBtn.hidden = true;
+      } else {
+        skeletonCard.hidden = true;
+      }
+    }
+
+    function showError(message) {
+      resultShell.hidden = false;
+      skeletonCard.hidden = true;
+      resultCard.hidden = true;
+      quizCard.hidden = true;
+      errorCard.hidden = false;
+      quizBtn.hidden = true;
+      errorMessage.textContent = message;
+      errorCard.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function getFriendlyNetworkError(provider, error) {
+      const providerName = capitalize(provider);
+      const baseMessage = `The request never reached ${providerName}. This is usually a browser or network issue rather than a problem with your topic.`;
+      const likelyCause = "If you're opening this as a plain local HTML file, the browser may be blocking the direct API call, or the request may be failing because of CORS, network restrictions, or an invalid key.";
+      const nextStep = `Try serving the file from a small local web server, then test again. If it still fails, check the browser console and confirm the API key has access to the ${providerName} API.`;
+      const detail = error && error.message ? ` Details: ${error.message}` : "";
+      return `${baseMessage} ${likelyCause} ${nextStep}${detail}`;
+    }
+
+    async function fetchGroq(messages, systemPrompt, maxTokens = 900) {
+      const provider = PROVIDERS.groq;
+      let response;
+      try {
+        response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${provider.apiKey}`
+          },
+          body: JSON.stringify({
+            model: provider.model,
+            max_completion_tokens: maxTokens,
+            temperature: 0.5,
+            messages: [
+              { role: "system", content: systemPrompt },
+              ...messages
+            ]
+          })
+        });
+      } catch (error) {
+        throw new Error(getFriendlyNetworkError("groq", error));
+      }
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const apiMessage = data?.error?.message || "The API request failed. Double-check your Groq API key and model access.";
+        throw new Error(apiMessage);
+      }
+
+      const text = data?.choices?.[0]?.message?.content?.trim() || "";
+
+      if (!text) throw new Error("Groq returned an empty response.");
+      return text;
+    }
+
+    async function fetchExplanation(messages, systemPrompt, maxTokens = 900) {
+      return fetchGroq(messages, systemPrompt, maxTokens);
+    }
+
+    async function typewriterRender(markdown) {
+      const html = markdownToHtml(markdown);
+      const temp = document.createElement("div");
+      temp.innerHTML = html;
+      const plainText = temp.textContent || temp.innerText || "";
+
+      explanationContent.innerHTML = "";
+      const paragraph = document.createElement("p");
+      explanationContent.appendChild(paragraph);
+      const cursor = document.createElement("span");
+      cursor.className = "cursor";
+      cursor.textContent = "▋";
+      paragraph.appendChild(cursor);
+
+      let rendered = "";
+      const step = Math.max(2, Math.ceil(plainText.length / 180));
+      for (let i = 0; i < plainText.length; i += step) {
+        rendered = plainText.slice(0, i + step);
+        paragraph.innerHTML = `${escapeHtml(rendered)}<span class="cursor">▋</span>`;
+        await new Promise(resolve => setTimeout(resolve, 14));
+      }
+
+      explanationContent.innerHTML = html;
+    }
+
+    async function explainTopic(topic) {
+      if (!topic.trim()) {
+        topicInput.focus();
+        showError("Enter a concept first so I have something meaningful to explain.");
+        return;
+      }
+
+      const activeProvider = PROVIDERS[selectedProvider];
+      if (!activeProvider || activeProvider.apiKey.startsWith("YOUR_")) {
+        showError(`Add your ${capitalize(selectedProvider)} API key first, then try again.`);
+        return;
+      }
+
+      lastTopic = topic.trim();
+      setLoading(true);
+
+      try {
+        const text = await fetchExplanation(
+          [{ role: "user", content: `Explain the concept "${lastTopic}" clearly. Organize the response with short sections and examples when useful.` }],
+          systemPrompts[selectedDifficulty],
+          1000
+        );
+
+        currentExplanation = text;
+        resultShell.hidden = false;
+        resultCard.hidden = false;
+        errorCard.hidden = true;
+        quizCard.hidden = true;
+        resultTitle.textContent = lastTopic;
+        resultMeta.textContent = `${capitalize(selectedDifficulty)} explanation · ${activeProvider.label}`;
+        setLoading(false);
+        await typewriterRender(text);
+        quizBtn.hidden = false;
+        saveHistory(lastTopic, selectedDifficulty);
+        resultCard.scrollIntoView({ behavior: "smooth", block: "start" });
+      } catch (error) {
+        setLoading(false);
+        showError(error.message || "Something unexpected happened while generating the explanation.");
+      }
+    }
+
+    async function generateQuiz() {
+      if (!lastTopic) return;
+
+      quizBtn.disabled = true;
+      quizBtn.textContent = "Building quiz...";
+      quizCard.hidden = true;
+
+      try {
+        const prompt = `Create exactly 3 concise quiz questions about "${lastTopic}" based on this explanation:\n\n${currentExplanation}\n\nReturn only a numbered list with 3 items.`;
+        const text = await fetchExplanation(
+          [{ role: "user", content: prompt }],
+          "You generate concise, thoughtful quiz questions based on a concept explanation. Return exactly three numbered questions with no answers.",
+          320
+        );
+
+        const questions = text
+          .split(/\n+/)
+          .map(line => line.replace(/^\d+\.\s*/, "").trim())
+          .filter(Boolean)
+          .slice(0, 3);
+
+        quizList.innerHTML = "";
+        questions.forEach(question => {
+          const li = document.createElement("li");
+          li.textContent = question;
+          quizList.appendChild(li);
+        });
+
+        quizCard.hidden = false;
+        quizCard.scrollIntoView({ behavior: "smooth", block: "start" });
+      } catch (error) {
+        showError(error.message || "The quiz could not be generated.");
+      } finally {
+        quizBtn.disabled = false;
+        quizBtn.textContent = "Quiz me";
+      }
+    }
+
+    function animatePlaceholder() {
+      const example = `Try "${examples[placeholderIndex]}"`;
+      let index = 0;
+      let deleting = false;
+
+      const tick = () => {
+        if (document.activeElement !== topicInput && !topicInput.value) {
+          topicInput.setAttribute("placeholder", example.slice(0, index));
+        }
+
+        if (!deleting) {
+          index++;
+          if (index > example.length) {
+            deleting = true;
+            placeholderFrame = setTimeout(tick, 1450);
+            return;
+          }
+        } else {
+          index--;
+          if (index < 0) {
+            deleting = false;
+            placeholderIndex = (placeholderIndex + 1) % examples.length;
+            placeholderFrame = setTimeout(animatePlaceholder, 120);
+            return;
+          }
+        }
+
+        placeholderFrame = setTimeout(tick, deleting ? 28 : 54);
+      };
+
+      tick();
+    }
+
+    function openSidebar() {
+      historySidebar.classList.add("open");
+      sidebarBackdrop.classList.add("show");
+    }
+
+    function closeSidebar() {
+      historySidebar.classList.remove("open");
+      sidebarBackdrop.classList.remove("show");
+    }
+
+    function syncDesktopSidebar() {
+      if (window.innerWidth < 980) {
+        historySidebar.classList.remove("collapsed-desktop");
+        appShell.classList.remove("sidebar-collapsed");
+        if (desktopSidebarOpen) desktopSidebarOpen.hidden = true;
+        return;
+      }
+
+      historySidebar.classList.toggle("collapsed-desktop", desktopSidebarCollapsed);
+      appShell.classList.toggle("sidebar-collapsed", desktopSidebarCollapsed);
+
+      if (desktopSidebarOpen) {
+        desktopSidebarOpen.hidden = !desktopSidebarCollapsed;
+      }
+
+      if (desktopSidebarToggle) {
+        desktopSidebarToggle.innerHTML = desktopSidebarCollapsed ? "&rarr;" : "&larr;";
+        desktopSidebarToggle.setAttribute("aria-label", desktopSidebarCollapsed ? "Open recent topics" : "Collapse recent topics");
+      }
+    }
+
+    function toggleDesktopSidebar(forceState) {
+      desktopSidebarCollapsed = typeof forceState === "boolean" ? forceState : !desktopSidebarCollapsed;
+      syncDesktopSidebar();
+    }
+
+    function createRipple(event) {
+      const button = event.currentTarget;
+      const circle = document.createElement("span");
+      const rect = button.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height);
+      circle.className = "ripple";
+      circle.style.width = circle.style.height = `${size}px`;
+      circle.style.left = `${event.clientX - rect.left - size / 2}px`;
+      circle.style.top = `${event.clientY - rect.top - size / 2}px`;
+      button.appendChild(circle);
+      circle.addEventListener("animationend", () => circle.remove());
+    }
+
+    function initParticles() {
+      const canvas = document.getElementById("particle-canvas");
+      const ctx = canvas.getContext("2d");
+      let particles = [];
+
+      function resize() {
+        canvas.width = window.innerWidth * window.devicePixelRatio;
+        canvas.height = window.innerHeight * window.devicePixelRatio;
+        canvas.style.width = `${window.innerWidth}px`;
+        canvas.style.height = `${window.innerHeight}px`;
+        ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
+        particles = Array.from({ length: Math.min(46, Math.floor(window.innerWidth / 28)) }, () => ({
+          x: Math.random() * window.innerWidth,
+          y: Math.random() * window.innerHeight,
+          r: Math.random() * 2.1 + 0.4,
+          dx: (Math.random() - 0.5) * 0.22,
+          dy: (Math.random() - 0.5) * 0.22,
+          a: Math.random() * 0.55 + 0.18
+        }));
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+        for (const p of particles) {
+          p.x += p.dx;
+          p.y += p.dy;
+          if (p.x < -10) p.x = window.innerWidth + 10;
+          if (p.x > window.innerWidth + 10) p.x = -10;
+          if (p.y < -10) p.y = window.innerHeight + 10;
+          if (p.y > window.innerHeight + 10) p.y = -10;
+
+          const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 6);
+          gradient.addColorStop(0, `rgba(124, 58, 237, ${p.a})`);
+          gradient.addColorStop(1, "rgba(6, 182, 212, 0)");
+          ctx.beginPath();
+          ctx.fillStyle = gradient;
+          ctx.arc(p.x, p.y, p.r * 6, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        requestAnimationFrame(draw);
+      }
+
+      resize();
+      draw();
+      window.addEventListener("resize", resize);
+    }
+
+    difficultyButtons.forEach(button => {
+      button.addEventListener("click", () => setDifficulty(button.dataset.level));
+    });
+
+    providerButtons.forEach(button => {
+      button.addEventListener("click", () => setProvider(button.dataset.provider));
+    });
+
+    explainBtn.addEventListener("click", event => {
+      createRipple(event);
+      explainTopic(topicInput.value);
+    });
+
+    quizBtn.addEventListener("click", event => {
+      createRipple(event);
+      generateQuiz();
+    });
+
+    retryBtn.addEventListener("click", () => explainTopic(topicInput.value || lastTopic));
+
+    topicInput.addEventListener("keydown", event => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        explainTopic(topicInput.value);
+      }
+    });
+
+    openSidebarBtn?.addEventListener("click", openSidebar);
+    closeSidebarBtn?.addEventListener("click", closeSidebar);
+    desktopSidebarToggle?.addEventListener("click", () => toggleDesktopSidebar());
+    desktopSidebarOpen?.addEventListener("click", () => toggleDesktopSidebar(false));
+    sidebarBackdrop.addEventListener("click", closeSidebar);
+    window.addEventListener("resize", syncDesktopSidebar);
+
+    renderHistory();
+    setProvider(selectedProvider);
+    animatePlaceholder();
+    initParticles();
+    syncDesktopSidebar();
+  </script>
+</body>
+</html>
