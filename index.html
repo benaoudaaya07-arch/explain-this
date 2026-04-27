@@ -692,7 +692,8 @@
     }
 
     .explanation-content,
-    .quiz-list {
+    .flashcard-answer,
+    .flashcard-question {
       color: #ebeeff;
       line-height: 1.8;
       font-size: 1rem;
@@ -700,13 +701,11 @@
 
     .explanation-content p,
     .explanation-content ul,
-    .explanation-content ol,
-    .quiz-list li {
+    .explanation-content ol {
       margin: 0 0 14px;
     }
 
-    .explanation-content p:last-child,
-    .quiz-list li:last-child {
+    .explanation-content p:last-child {
       margin-bottom: 0;
     }
 
@@ -777,8 +776,144 @@
       animation: cardIn 450ms ease forwards;
     }
 
-    .quiz-list {
-      padding-left: 1.2rem;
+    .flashcard-shell {
+      display: grid;
+      gap: 16px;
+    }
+
+    .flashcard-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .flashcard-progress {
+      color: var(--muted);
+      font-size: 0.88rem;
+      letter-spacing: 0.03em;
+    }
+
+    .flashcard-nav {
+      display: flex;
+      gap: 10px;
+    }
+
+    .flashcard-nav-btn {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      border-radius: 14px;
+      width: 44px;
+      height: 44px;
+      display: inline-grid;
+      place-items: center;
+      cursor: pointer;
+      transition: transform var(--ease), border-color var(--ease), box-shadow var(--ease), opacity var(--ease);
+    }
+
+    .flashcard-nav-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      border-color: rgba(124, 58, 237, 0.4);
+      box-shadow: var(--glow);
+    }
+
+    .flashcard-nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .flashcard-scene {
+      perspective: 1800px;
+    }
+
+    .flashcard {
+      min-height: 320px;
+      cursor: pointer;
+    }
+
+    .flashcard-inner {
+      position: relative;
+      width: 100%;
+      min-height: 320px;
+      transform-style: preserve-3d;
+      transition: transform 700ms cubic-bezier(.2, .7, .2, 1);
+    }
+
+    .flashcard.flipped .flashcard-inner {
+      transform: rotateY(180deg);
+    }
+
+    .flashcard-face {
+      position: absolute;
+      inset: 0;
+      border-radius: 24px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.08);
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.06), rgba(124,58,237,0.05) 45%, rgba(6,182,212,0.07)),
+        rgba(15, 15, 26, 0.82);
+      backdrop-filter: blur(20px);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+
+    .flashcard-front::before,
+    .flashcard-back::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.04), transparent 40%, rgba(6,182,212,0.05));
+      pointer-events: none;
+    }
+
+    .flashcard-back {
+      transform: rotateY(180deg);
+    }
+
+    .flashcard-kicker {
+      position: relative;
+      z-index: 1;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #d9ddff;
+      font-size: 0.84rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .flashcard-question,
+    .flashcard-answer {
+      position: relative;
+      z-index: 1;
+      margin: 22px 0;
+      font-size: clamp(1.05rem, 2vw, 1.28rem);
+      line-height: 1.7;
+    }
+
+    .flashcard-answer {
+      color: #6ee7f9;
+    }
+
+    .flashcard-hint {
+      position: relative;
+      z-index: 1;
+      color: var(--soft);
+      font-size: 0.9rem;
+    }
+
+    .flashcard-note {
+      color: var(--soft);
+      font-size: 0.86rem;
+      line-height: 1.6;
     }
 
     .footer-note {
@@ -996,11 +1131,35 @@
 
           <section id="quizCard" class="quiz-card" hidden>
             <div class="card-head">
-              <div class="card-title">Quick quiz</div>
-              <div class="card-meta">3 questions</div>
+              <div class="card-title">Flashcards</div>
+              <div class="card-meta">3 cards</div>
             </div>
-            <ol id="quizList" class="quiz-list"></ol>
-            <div class="footer-note">Tip: answer out loud before checking your notes.</div>
+            <div class="flashcard-shell">
+              <div class="flashcard-topbar">
+                <div id="flashcardProgress" class="flashcard-progress">Card 1 of 3</div>
+                <div class="flashcard-nav">
+                  <button id="prevFlashcardBtn" class="flashcard-nav-btn" type="button" aria-label="Previous flashcard">←</button>
+                  <button id="nextFlashcardBtn" class="flashcard-nav-btn" type="button" aria-label="Next flashcard">→</button>
+                </div>
+              </div>
+              <div class="flashcard-scene">
+                <div id="flashcard" class="flashcard" role="button" tabindex="0" aria-label="Flip flashcard">
+                  <div id="flashcardInner" class="flashcard-inner">
+                    <div class="flashcard-face flashcard-front">
+                      <div class="flashcard-kicker">Question</div>
+                      <div id="flashcardQuestion" class="flashcard-question"></div>
+                      <div class="flashcard-hint">👆 tap to reveal</div>
+                    </div>
+                    <div class="flashcard-face flashcard-back">
+                      <div class="flashcard-kicker">✅ Answer</div>
+                      <div id="flashcardAnswer" class="flashcard-answer"></div>
+                      <div class="flashcard-note">Use the arrows to move between cards.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="footer-note">Tip: say your answer out loud before flipping the card.</div>
           </section>
         </div>
       </section>
@@ -1034,7 +1193,12 @@
     const resultMeta = document.getElementById("resultMeta");
     const explanationContent = document.getElementById("explanationContent");
     const quizCard = document.getElementById("quizCard");
-    const quizList = document.getElementById("quizList");
+    const flashcard = document.getElementById("flashcard");
+    const flashcardQuestion = document.getElementById("flashcardQuestion");
+    const flashcardAnswer = document.getElementById("flashcardAnswer");
+    const flashcardProgress = document.getElementById("flashcardProgress");
+    const prevFlashcardBtn = document.getElementById("prevFlashcardBtn");
+    const nextFlashcardBtn = document.getElementById("nextFlashcardBtn");
     const historyList = document.getElementById("historyList");
     const difficultyHint = document.getElementById("difficultyHint");
     const skeletonCard = document.getElementById("skeletonCard");
@@ -1065,9 +1229,13 @@
     let selectedProvider = "groq";
     let lastTopic = "";
     let currentExplanation = "";
+    let flashcards = [];
+    let currentFlashcardIndex = 0;
     let placeholderIndex = 0;
     let placeholderFrame = null;
     let desktopSidebarCollapsed = false;
+    let flashcardTouchStartX = 0;
+    let suppressNextFlashcardClick = false;
 
     function getHistory() {
       try {
@@ -1313,6 +1481,61 @@
       return fetchGroq(messages, systemPrompt, maxTokens);
     }
 
+    function normalizeFlashcards(text) {
+      const cleaned = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+
+      try {
+        const parsed = JSON.parse(cleaned);
+        if (Array.isArray(parsed)) {
+          return parsed
+            .map(item => ({
+              question: String(item.question || "").trim(),
+              answer: String(item.answer || "").trim()
+            }))
+            .filter(item => item.question && item.answer)
+            .slice(0, 3);
+        }
+      } catch {
+        // Fall back to a loose parser below.
+      }
+
+      const fallbackCards = cleaned
+        .split(/\n\s*\n/)
+        .map(block => {
+          const questionMatch = block.match(/question\s*[:\-]\s*(.+)/i);
+          const answerMatch = block.match(/answer\s*[:\-]\s*([\s\S]+)/i);
+          return {
+            question: questionMatch ? questionMatch[1].trim() : "",
+            answer: answerMatch ? answerMatch[1].trim() : ""
+          };
+        })
+        .filter(item => item.question && item.answer)
+        .slice(0, 3);
+
+      return fallbackCards;
+    }
+
+    function renderFlashcard() {
+      if (!flashcards.length) return;
+      const card = flashcards[currentFlashcardIndex];
+      flashcard.classList.remove("flipped");
+      flashcardQuestion.textContent = card.question;
+      flashcardAnswer.textContent = card.answer;
+      flashcardProgress.textContent = `Card ${currentFlashcardIndex + 1} of ${flashcards.length}`;
+      prevFlashcardBtn.disabled = currentFlashcardIndex === 0;
+      nextFlashcardBtn.disabled = currentFlashcardIndex === flashcards.length - 1;
+    }
+
+    function flipFlashcard() {
+      flashcard.classList.toggle("flipped");
+    }
+
+    function goToFlashcard(index) {
+      if (!flashcards.length) return;
+      currentFlashcardIndex = Math.max(0, Math.min(index, flashcards.length - 1));
+      renderFlashcard();
+    }
+
     async function typewriterRender(markdown) {
       const html = markdownToHtml(markdown);
       const temp = document.createElement("div");
@@ -1383,34 +1606,29 @@
       if (!lastTopic) return;
 
       quizBtn.disabled = true;
-      quizBtn.textContent = "Building quiz...";
+      quizBtn.textContent = "Building cards...";
       quizCard.hidden = true;
 
       try {
-        const prompt = `Create exactly 3 concise quiz questions about "${lastTopic}" based on this explanation:\n\n${currentExplanation}\n\nReturn only a numbered list with 3 items.`;
+        const prompt = `Create exactly 3 flashcards about "${lastTopic}" based on this explanation:\n\n${currentExplanation}\n\nReturn only valid JSON as an array of 3 objects using this shape: [{"question":"...","answer":"..."}]. Keep each answer concise but helpful.`;
         const text = await fetchExplanation(
           [{ role: "user", content: prompt }],
-          "You generate concise, thoughtful quiz questions based on a concept explanation. Return exactly three numbered questions with no answers.",
-          320
+          "You generate concise flashcards from a concept explanation. Return only valid JSON with exactly 3 objects. Each object must have a question and an answer.",
+          420
         );
 
-        const questions = text
-          .split(/\n+/)
-          .map(line => line.replace(/^\d+\.\s*/, "").trim())
-          .filter(Boolean)
-          .slice(0, 3);
+        flashcards = normalizeFlashcards(text);
+        if (!flashcards.length) {
+          throw new Error("The flashcards could not be parsed. Try again.");
+        }
 
-        quizList.innerHTML = "";
-        questions.forEach(question => {
-          const li = document.createElement("li");
-          li.textContent = question;
-          quizList.appendChild(li);
-        });
+        currentFlashcardIndex = 0;
+        renderFlashcard();
 
         quizCard.hidden = false;
         quizCard.scrollIntoView({ behavior: "smooth", block: "start" });
       } catch (error) {
-        showError(error.message || "The quiz could not be generated.");
+        showError(error.message || "The flashcards could not be generated.");
       } finally {
         quizBtn.disabled = false;
         quizBtn.textContent = "Quiz me";
@@ -1553,6 +1771,32 @@
     providerButtons.forEach(button => {
       button.addEventListener("click", () => setProvider(button.dataset.provider));
     });
+
+    flashcard?.addEventListener("click", () => {
+      if (suppressNextFlashcardClick) {
+        suppressNextFlashcardClick = false;
+        return;
+      }
+      flipFlashcard();
+    });
+    flashcard?.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        flipFlashcard();
+      }
+    });
+    flashcard?.addEventListener("touchstart", event => {
+      flashcardTouchStartX = event.changedTouches[0].clientX;
+    }, { passive: true });
+    flashcard?.addEventListener("touchend", event => {
+      const touchEndX = event.changedTouches[0].clientX;
+      if (Math.abs(touchEndX - flashcardTouchStartX) > 30) {
+        suppressNextFlashcardClick = true;
+        flipFlashcard();
+      }
+    });
+    prevFlashcardBtn?.addEventListener("click", () => goToFlashcard(currentFlashcardIndex - 1));
+    nextFlashcardBtn?.addEventListener("click", () => goToFlashcard(currentFlashcardIndex + 1));
 
     explainBtn.addEventListener("click", event => {
       createRipple(event);
