@@ -25,7 +25,7 @@ An AI-powered website that explains any CS or math concept at different difficul
 
 ## Live Demo
 
-[Click here to try it](https://yourusername.github.io/explain-this)
+[Click here to try it]((https://benaoudaaya07-arch.github.io/explain-this/))
 
 ---
 
